@@ -6,6 +6,7 @@ import 'config.dart';
 import 'data/mock_repository.dart';
 import 'data/supabase_repository.dart';
 import 'data/voffer_repository.dart';
+import 'location/location_service.dart';
 import 'screens/customer/customer_home.dart';
 import 'screens/firm/firm_home.dart';
 import 'screens/sign_in_screen.dart';
@@ -22,7 +23,12 @@ Future<void> main() async {
   } else {
     repository = MockVofferRepository();
   }
-  runApp(VofferApp(state: AppState(repository)..restore()));
+  runApp(
+    VofferApp(
+      state: AppState(repository, location: const DeviceLocationService())
+        ..restore(),
+    ),
+  );
 }
 
 class VofferApp extends StatelessWidget {

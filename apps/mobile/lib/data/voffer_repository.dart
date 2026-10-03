@@ -1,6 +1,7 @@
 import '../models/app_user.dart';
 import '../models/offer.dart';
 import '../models/order.dart';
+import '../models/shop.dart';
 
 class RepositoryException implements Exception {
   RepositoryException(this.message);
@@ -27,8 +28,27 @@ abstract class VofferRepository {
 
   Future<void> signOut();
 
-  /// Active, unexpired offers from every firm, newest first.
+  /// Live offers from every firm, newest first.
   Future<List<Offer>> fetchFeed({String? category, String? query});
+
+  /// Live offers from shops within [radiusKm] of [near], nearest first, with
+  /// [Offer.distanceKm] set.
+  Future<List<Offer>> fetchNearby({
+    required GeoPoint near,
+    double radiusKm = 10,
+    String? category,
+    String? query,
+  });
+
+  /// The shop of the firm [shopId], or null if it has not set one up yet.
+  Future<Shop?> fetchShop(String shopId);
+
+  /// Creates or updates [firm]'s shop. The shop name also becomes the firm's
+  /// display name.
+  Future<Shop> saveShop(AppUser firm, ShopDetails details);
+
+  /// Live offers from one shop, newest first.
+  Future<List<Offer>> fetchShopOffers(String shopId);
 
   /// All offers published by [firmId], including expired and paused ones.
   Future<List<Offer>> fetchFirmOffers(String firmId);

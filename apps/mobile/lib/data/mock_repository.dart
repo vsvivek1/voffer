@@ -3,9 +3,10 @@ import 'dart:math';
 import '../models/app_user.dart';
 import '../models/offer.dart';
 import '../models/order.dart';
+import '../models/shop.dart';
 import 'voffer_repository.dart';
 
-/// In-memory backend seeded with demo firms and offers. Used when no
+/// In-memory backend seeded with demo firms, shops in Kochi and offers. Used when no
 /// Supabase project is configured, and in tests.
 class MockVofferRepository implements VofferRepository {
   MockVofferRepository({DateTime? now}) {
@@ -14,6 +15,7 @@ class MockVofferRepository implements VofferRepository {
 
   final _users = <String, AppUser>{};
   final _passwords = <String, String>{};
+  final _shops = <String, Shop>{};
   final _offers = <Offer>[];
   final _orders = <Order>[];
   final _random = Random();
@@ -31,6 +33,23 @@ class MockVofferRepository implements VofferRepository {
     final cafe = _addUser('cafe@demo.voffer', 'Bean There Cafe', UserRole.firm);
     final store = _addUser('store@demo.voffer', 'Urban Threads', UserRole.firm);
     _addUser('customer@demo.voffer', 'Demo Customer', UserRole.customer);
+    _shops[cafe.id] = Shop(
+      id: cafe.id,
+      name: cafe.displayName,
+      category: 'Food & Drink',
+      address: 'Panampilly Nagar, Kochi',
+      location: const GeoPoint(9.9580, 76.2950),
+      phone: '+91 98470 00001',
+      hours: 'Daily, 8am–10pm',
+    );
+    _shops[store.id] = Shop(
+      id: store.id,
+      name: store.displayName,
+      category: 'Fashion',
+      address: 'MG Road, Kochi',
+      location: const GeoPoint(9.9700, 76.2850),
+      hours: 'Mon–Sat, 10am–9pm',
+    );
 
     _offers.addAll([
       Offer(
@@ -131,19 +150,83 @@ class MockVofferRepository implements VofferRepository {
   @override
   Future<void> signOut() async => _current = null;
 
-  @override
-  Future<List<Offer>> fetchFeed({String? category, String? query}) async {
+  bool _matches(Offer o, String? category, String? query) {
+    if (!o.isLive) return false;
+    if (category != null && o.category != category) return false;
     final q = query?.trim().toLowerCase() ?? '';
-    final feed = _offers.where((o) {
-      if (!o.isActive || o.isExpired) return false;
-      if (category != null && o.category != category) return false;
-      if (q.isEmpty) return true;
-      return o.title.toLowerCase().contains(q) ||
-          o.firmName.toLowerCase().contains(q) ||
-          o.description.toLowerCase().contains(q);
-    }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return feed;
+    if (q.isEmpty) return true;
+    return o.title.toLowerCase().contains(q) ||
+        o.firmName.toLowerCase().contains(q) ||
+        o.description.toLowerCase().contains(q);
   }
+
+  @override
+  Future<List<Offer>> fetchFeed({String? category, String? query}) async =>
+      _offers.where((o) => _matches(o, category, query)).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  @override
+  Future<List<Offer>> fetchNearby({
+    required GeoPoint near,
+    double radiusKm = 10,
+    String? category,
+    String? query,
+  }) async {
+    final results = <Offer>[];
+    for (final o in _offers) {
+      final shop = _shops[o.firmId];
+      if (shop == null || !_matches(o, category, query)) continue;
+      final km = near.distanceKmTo(shop.location);
+      if (km > radiusKm) continue;
+      results.add(o.copyWith(distanceKm: km, shopAddress: shop.address));
+    }
+    return results..sort((a, b) {
+      final byDistance = a.distanceKm!.compareTo(b.distanceKm!);
+      return byDistance != 0 ? byDistance : b.createdAt.compareTo(a.createdAt);
+    });
+  }
+
+  @override
+  Future<Shop?> fetchShop(String shopId) async => _shops[shopId];
+
+  @override
+  Future<Shop> saveShop(AppUser firm, ShopDetails details) async {
+    if (!firm.isFirm) {
+      throw RepositoryException('Only firm accounts can have a shop.');
+    }
+    final name = details.name.trim();
+    if (name.isEmpty) throw RepositoryException('Enter the shop name.');
+    if (details.address.trim().isEmpty) {
+      throw RepositoryException('Enter the shop address.');
+    }
+    final shop = Shop(
+      id: firm.id,
+      name: name,
+      category: details.category,
+      address: details.address.trim(),
+      location: details.location,
+      phone: _blankToNull(details.phone),
+      hours: _blankToNull(details.hours),
+    );
+    _shops[firm.id] = shop;
+    final updated = firm.copyWith(displayName: name);
+    _users[firm.email] = updated;
+    if (_current?.id == firm.id) _current = updated;
+    for (var i = 0; i < _offers.length; i++) {
+      if (_offers[i].firmId == firm.id) {
+        _offers[i] = _offers[i].copyWith(firmName: name);
+      }
+    }
+    return shop;
+  }
+
+  static String? _blankToNull(String? v) =>
+      (v == null || v.trim().isEmpty) ? null : v.trim();
+
+  @override
+  Future<List<Offer>> fetchShopOffers(String shopId) async =>
+      _offers.where((o) => o.firmId == shopId && o.isLive).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   @override
   Future<List<Offer>> fetchFirmOffers(String firmId) async =>
@@ -153,6 +236,9 @@ class MockVofferRepository implements VofferRepository {
   @override
   Future<Offer> publishOffer(AppUser firm, NewOffer offer) async {
     if (!firm.isFirm) throw RepositoryException('Only firms can publish.');
+    if (!_shops.containsKey(firm.id)) {
+      throw RepositoryException('Set up your shop before publishing.');
+    }
     final created = Offer(
       id: _id('offer'),
       firmId: firm.id,
@@ -164,6 +250,7 @@ class MockVofferRepository implements VofferRepository {
       category: offer.category,
       imageUrl: offer.imageUrl,
       quantityAvailable: offer.quantityAvailable,
+      startsAt: offer.startsAt,
       expiresAt: offer.expiresAt,
       createdAt: DateTime.now(),
     );

@@ -19,4 +19,11 @@ class AppUser {
   final UserRole role;
 
   bool get isFirm => role == UserRole.firm;
+
+  AppUser copyWith({String? displayName}) => AppUser(
+    id: id,
+    email: email,
+    displayName: displayName ?? this.displayName,
+    role: role,
+  );
 }

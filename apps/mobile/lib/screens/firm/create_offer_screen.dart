@@ -20,6 +20,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final _quantity = TextEditingController();
   final _imageUrl = TextEditingController();
   String _category = offerCategories.first;
+  DateTime? _startsAt;
   DateTime _expiresAt = DateTime.now().add(const Duration(days: 7));
   bool _busy = false;
 
@@ -38,33 +39,53 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     super.dispose();
   }
 
-  Future<void> _pickExpiry() async {
+  Future<DateTime?> _pickDateTime(DateTime initial, TimeOfDay fallback) async {
     final now = DateTime.now();
     final date = await showDatePicker(
       context: context,
-      initialDate: _expiresAt,
+      initialDate: initial.isBefore(now) ? now : initial,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365)),
     );
-    if (date == null || !mounted) return;
+    if (date == null || !mounted) return null;
     final time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(_expiresAt),
+      initialTime: TimeOfDay.fromDateTime(initial),
     );
-    if (!mounted) return;
-    setState(
-      () => _expiresAt = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time?.hour ?? 23,
-        time?.minute ?? 59,
-      ),
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time?.hour ?? fallback.hour,
+      time?.minute ?? fallback.minute,
     );
+  }
+
+  Future<void> _pickStart() async {
+    final picked = await _pickDateTime(
+      _startsAt ?? DateTime.now(),
+      const TimeOfDay(hour: 9, minute: 0),
+    );
+    if (picked != null && mounted) setState(() => _startsAt = picked);
+  }
+
+  Future<void> _pickExpiry() async {
+    final picked = await _pickDateTime(
+      _expiresAt,
+      const TimeOfDay(hour: 23, minute: 59),
+    );
+    if (picked != null && mounted) setState(() => _expiresAt = picked);
   }
 
   Future<void> _publish() async {
     if (!_formKey.currentState!.validate()) return;
+    final startsAt = _startsAt;
+    if (!_expiresAt.isAfter(startsAt ?? DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The offer must end after it starts.')),
+      );
+      return;
+    }
     final app = AppScope.read(context);
     setState(() => _busy = true);
     try {
@@ -80,6 +101,9 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               ? null
               : _imageUrl.text.trim(),
           quantityAvailable: int.tryParse(_quantity.text),
+          startsAt: startsAt != null && startsAt.isAfter(DateTime.now())
+              ? startsAt
+              : null,
           expiresAt: _expiresAt,
         ),
       );
@@ -192,6 +216,24 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               keyboardType: TextInputType.url,
             ),
             gap,
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.play_circle_outline),
+              title: const Text('Starts'),
+              subtitle: Text(
+                _startsAt == null
+                    ? 'As soon as published'
+                    : formatDate(_startsAt!),
+              ),
+              trailing: _startsAt == null
+                  ? const Icon(Icons.edit)
+                  : IconButton(
+                      tooltip: 'Start now',
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(() => _startsAt = null),
+                    ),
+              onTap: _pickStart,
+            ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.event),

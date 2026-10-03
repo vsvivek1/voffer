@@ -3,11 +3,19 @@ import 'package:flutter/material.dart';
 import '../../app_state.dart';
 import '../../format.dart';
 import '../../models/offer.dart';
+import '../shop/shop_profile_screen.dart';
 
 class OfferDetailScreen extends StatefulWidget {
-  const OfferDetailScreen({super.key, required this.offer});
+  const OfferDetailScreen({
+    super.key,
+    required this.offer,
+    this.showShopLink = true,
+  });
 
   final Offer offer;
+
+  /// False when opened from the shop's own profile.
+  final bool showShopLink;
 
   @override
   State<OfferDetailScreen> createState() => _OfferDetailScreenState();
@@ -98,7 +106,30 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
                 Chip(label: Text('${offer.quantityAvailable} left')),
             ],
           ),
-          const SizedBox(height: 16),
+          if (widget.showShopLink)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.storefront),
+              title: Text(offer.firmName),
+              subtitle: Text(
+                [
+                  ?offer.shopAddress,
+                  if (offer.distanceKm != null)
+                    '${formatDistance(offer.distanceKm!)} away',
+                ].join(' · ').ifEmpty('See shop details'),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ShopProfileScreen(
+                    shopId: offer.firmId,
+                    title: offer.firmName,
+                  ),
+                ),
+              ),
+            )
+          else
+            const SizedBox(height: 16),
           Text(offer.description, style: theme.textTheme.bodyLarge),
           const SizedBox(height: 24),
           Row(
@@ -167,4 +198,8 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
       ),
     );
   }
+}
+
+extension on String {
+  String ifEmpty(String fallback) => isEmpty ? fallback : this;
 }

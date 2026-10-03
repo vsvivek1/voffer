@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/app_user.dart';
 import '../models/offer.dart';
 import '../models/order.dart';
+import '../models/shop.dart';
 import 'voffer_repository.dart';
 
 /// Backend backed by the schema in `supabase/migrations`.
@@ -81,11 +82,13 @@ class SupabaseVofferRepository implements VofferRepository {
     String? category,
     String? query,
   }) => _guard(() async {
+    final now = DateTime.now().toUtc().toIso8601String();
     var request = _client
         .from('offers')
         .select()
         .eq('is_active', true)
-        .gt('expires_at', DateTime.now().toUtc().toIso8601String());
+        .lte('starts_at', now)
+        .gt('expires_at', now);
     if (category != null) request = request.eq('category', category);
     final q = query?.trim() ?? '';
     if (q.isNotEmpty) {
@@ -95,6 +98,69 @@ class SupabaseVofferRepository implements VofferRepository {
       );
     }
     final rows = await request.order('created_at', ascending: false);
+    return rows.map(Offer.fromMap).toList();
+  });
+
+  @override
+  Future<List<Offer>> fetchNearby({
+    required GeoPoint near,
+    double radiusKm = 10,
+    String? category,
+    String? query,
+  }) => _guard(() async {
+    final List<dynamic> rows = await _client.rpc(
+      'offers_nearby',
+      params: {
+        'p_lat': near.lat,
+        'p_lng': near.lng,
+        'p_radius_km': radiusKm,
+        'p_category': category,
+        'p_query': query?.trim(),
+      },
+    );
+    return rows.cast<Map<String, dynamic>>().map(Offer.fromMap).toList();
+  });
+
+  @override
+  Future<Shop?> fetchShop(String shopId) => _guard(() async {
+    final row = await _client
+        .from('shops')
+        .select('id, name, category, address, phone, hours, lat, lng')
+        .eq('id', shopId)
+        .maybeSingle();
+    return row == null ? null : Shop.fromMap(row);
+  });
+
+  @override
+  Future<Shop> saveShop(AppUser firm, ShopDetails details) => _guard(() async {
+    final row = await _client
+        .rpc(
+          'save_shop',
+          params: {
+            'p_name': details.name,
+            'p_category': details.category,
+            'p_address': details.address,
+            'p_phone': details.phone,
+            'p_hours': details.hours,
+            'p_lat': details.location.lat,
+            'p_lng': details.location.lng,
+          },
+        )
+        .single();
+    return Shop.fromMap(row);
+  });
+
+  @override
+  Future<List<Offer>> fetchShopOffers(String shopId) => _guard(() async {
+    final now = DateTime.now().toUtc().toIso8601String();
+    final rows = await _client
+        .from('offers')
+        .select()
+        .eq('firm_id', shopId)
+        .eq('is_active', true)
+        .lte('starts_at', now)
+        .gt('expires_at', now)
+        .order('created_at', ascending: false);
     return rows.map(Offer.fromMap).toList();
   });
 

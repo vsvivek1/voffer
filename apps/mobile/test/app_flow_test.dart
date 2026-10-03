@@ -26,6 +26,8 @@ void main() {
     await signIn(tester, 'customer@demo.voffer');
     expect(find.text('40% off denim jackets'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('40% off denim jackets'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('40% off denim jackets'));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('Buy for'));

@@ -9,11 +9,14 @@ class Offer {
     required this.category,
     required this.expiresAt,
     required this.createdAt,
+    DateTime? startsAt,
     this.originalPrice,
     this.imageUrl,
     this.quantityAvailable,
     this.isActive = true,
-  });
+    this.distanceKm,
+    this.shopAddress,
+  }) : startsAt = startsAt ?? createdAt;
 
   final String id;
   final String firmId;
@@ -27,13 +30,22 @@ class Offer {
 
   /// Null means unlimited stock.
   final int? quantityAvailable;
+  final DateTime startsAt;
   final DateTime expiresAt;
   final DateTime createdAt;
   final bool isActive;
 
+  /// Distance from the customer, set only on nearby results.
+  final double? distanceKm;
+
+  /// The shop's address, set only on nearby results.
+  final String? shopAddress;
+
+  bool get isScheduled => DateTime.now().isBefore(startsAt);
   bool get isExpired => DateTime.now().isAfter(expiresAt);
   bool get isSoldOut => quantityAvailable != null && quantityAvailable! <= 0;
-  bool get isBuyable => isActive && !isExpired && !isSoldOut;
+  bool get isLive => isActive && !isScheduled && !isExpired;
+  bool get isBuyable => isLive && !isSoldOut;
 
   int? get discountPercent {
     final original = originalPrice;
@@ -41,10 +53,16 @@ class Offer {
     return ((1 - price / original) * 100).round();
   }
 
-  Offer copyWith({int? quantityAvailable, bool? isActive}) => Offer(
+  Offer copyWith({
+    int? quantityAvailable,
+    bool? isActive,
+    String? firmName,
+    double? distanceKm,
+    String? shopAddress,
+  }) => Offer(
     id: id,
     firmId: firmId,
-    firmName: firmName,
+    firmName: firmName ?? this.firmName,
     title: title,
     description: description,
     price: price,
@@ -52,9 +70,12 @@ class Offer {
     category: category,
     imageUrl: imageUrl,
     quantityAvailable: quantityAvailable ?? this.quantityAvailable,
+    startsAt: startsAt,
     expiresAt: expiresAt,
     createdAt: createdAt,
     isActive: isActive ?? this.isActive,
+    distanceKm: distanceKm ?? this.distanceKm,
+    shopAddress: shopAddress ?? this.shopAddress,
   );
 
   factory Offer.fromMap(Map<String, dynamic> map) => Offer(
@@ -72,9 +93,14 @@ class Offer {
     category: (map['category'] ?? 'Other') as String,
     imageUrl: map['image_url'] as String?,
     quantityAvailable: map['quantity_available'] as int?,
+    startsAt: map['starts_at'] == null
+        ? null
+        : DateTime.parse(map['starts_at'] as String),
     expiresAt: DateTime.parse(map['expires_at'] as String),
     createdAt: DateTime.parse(map['created_at'] as String),
     isActive: (map['is_active'] ?? true) as bool,
+    distanceKm: (map['distance_km'] as num?)?.toDouble(),
+    shopAddress: map['shop_address'] as String?,
   );
 }
 
@@ -86,6 +112,7 @@ class NewOffer {
     required this.price,
     required this.category,
     required this.expiresAt,
+    this.startsAt,
     this.originalPrice,
     this.imageUrl,
     this.quantityAvailable,
@@ -98,6 +125,9 @@ class NewOffer {
   final String category;
   final String? imageUrl;
   final int? quantityAvailable;
+
+  /// Null means the offer goes live as soon as it is published.
+  final DateTime? startsAt;
   final DateTime expiresAt;
 
   Map<String, dynamic> toMap() => {
@@ -108,6 +138,7 @@ class NewOffer {
     'category': category,
     'image_url': imageUrl,
     'quantity_available': quantityAvailable,
+    'starts_at': ?startsAt?.toUtc().toIso8601String(),
     'expires_at': expiresAt.toUtc().toIso8601String(),
   };
 }

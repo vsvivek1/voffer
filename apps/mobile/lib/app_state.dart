@@ -1,13 +1,15 @@
 import 'package:flutter/widgets.dart';
 
 import 'data/voffer_repository.dart';
+import 'location/location_service.dart';
 import 'models/app_user.dart';
 
-/// Holds the backend and the signed-in user for the widget tree.
+/// Holds the backend, location provider and the signed-in user for the widget tree.
 class AppState extends ChangeNotifier {
-  AppState(this.repository);
+  AppState(this.repository, {this.location = const NoLocationService()});
 
   final VofferRepository repository;
+  final LocationService location;
   AppUser? _user;
   bool _restoring = true;
 

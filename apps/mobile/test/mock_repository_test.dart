@@ -4,6 +4,7 @@ import 'package:voffer/data/voffer_repository.dart';
 import 'package:voffer/models/app_user.dart';
 import 'package:voffer/models/offer.dart';
 import 'package:voffer/models/order.dart';
+import 'package:voffer/models/shop.dart';
 
 void main() {
   late MockVofferRepository repo;
@@ -23,6 +24,15 @@ void main() {
       password: 'secret1',
       displayName: 'Corner Shop',
       role: UserRole.firm,
+    );
+    await repo.saveShop(
+      firm,
+      const ShopDetails(
+        name: 'Corner Shop',
+        category: 'Groceries',
+        address: 'Market Road, Kochi',
+        location: GeoPoint(9.98, 76.28),
+      ),
     );
     await repo.publishOffer(
       firm,
