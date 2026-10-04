@@ -25,9 +25,22 @@ class MockVofferRepository implements VofferRepository {
 
   String _id(String prefix) => '$prefix-${_nextId++}';
 
-  String _code() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    return List.generate(6, (_) => chars[_random.nextInt(chars.length)]).join();
+  /// A code no other open order at [firmId] uses.
+  String _code(String firmId) {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    while (true) {
+      final code = List.generate(
+        6,
+        (_) => chars[_random.nextInt(chars.length)],
+      ).join();
+      final taken = _orders.any(
+        (o) =>
+            o.firmId == firmId &&
+            o.code == code &&
+            o.status == OrderStatus.reserved,
+      );
+      if (!taken) return code;
+    }
   }
 
   void _seed(DateTime now) {
@@ -306,7 +319,7 @@ class MockVofferRepository implements VofferRepository {
       quantity: quantity,
       unitPrice: current.price,
       status: OrderStatus.reserved,
-      code: _code(),
+      code: _code(current.firmId),
       createdAt: DateTime.now(),
     );
     _orders.add(order);
@@ -324,8 +337,34 @@ class MockVofferRepository implements VofferRepository {
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   @override
-  Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
-    final i = _orders.indexWhere((o) => o.id == orderId);
-    if (i >= 0) _orders[i] = _orders[i].copyWith(status: status);
+  Future<Order> redeemOrder(AppUser firm, String code) async {
+    if (!firm.isFirm) {
+      throw RepositoryException('Only shops can redeem orders.');
+    }
+    final wanted = code.trim().toUpperCase();
+    if (wanted.isEmpty) throw RepositoryException('Enter the order code.');
+    final matches = _orders
+        .where((o) => o.firmId == firm.id && o.code == wanted)
+        .toList();
+    if (matches.isEmpty) {
+      throw RepositoryException('No order with code $wanted at your shop.');
+    }
+    final order = matches.firstWhere(
+      (o) => o.status == OrderStatus.reserved,
+      orElse: () => matches.last,
+    );
+    switch (order.status) {
+      case OrderStatus.fulfilled:
+        throw RepositoryException('Order $wanted was already redeemed.');
+      case OrderStatus.cancelled:
+        throw RepositoryException('Order $wanted was cancelled.');
+      case OrderStatus.reserved:
+        final redeemed = order.copyWith(
+          status: OrderStatus.fulfilled,
+          redeemedAt: DateTime.now(),
+        );
+        _orders[_orders.indexOf(order)] = redeemed;
+        return redeemed;
+    }
   }
 }

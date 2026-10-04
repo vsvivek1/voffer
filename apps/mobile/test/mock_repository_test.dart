@@ -74,7 +74,13 @@ void main() {
     expect(await repo.fetchCustomerOrders(customer.id), hasLength(1));
     expect(await repo.fetchFirmOrders(offer.firmId), hasLength(1));
 
-    await repo.updateOrderStatus(order.id, OrderStatus.fulfilled);
+    final firm = await repo.signIn(
+      email: offer.firmName == 'Bean There Cafe'
+          ? 'cafe@demo.voffer'
+          : 'store@demo.voffer',
+      password: 'demo1234',
+    );
+    await repo.redeemOrder(firm, order.code);
     expect(
       (await repo.fetchFirmOrders(offer.firmId)).single.status,
       OrderStatus.fulfilled,

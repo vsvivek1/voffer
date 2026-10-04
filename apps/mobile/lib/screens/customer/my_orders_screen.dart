@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_state.dart';
 import '../../format.dart';
 import '../../models/order.dart';
+import '../../widgets/order_qr.dart';
 
 class MyOrdersScreen extends StatefulWidget {
   const MyOrdersScreen({super.key});
@@ -65,6 +66,8 @@ class MyOrdersScreenState extends State<MyOrdersScreen> {
               itemBuilder: (context, i) {
                 final o = orders[i];
                 return ListTile(
+                  leading: const Icon(Icons.qr_code_2),
+                  onTap: () => showOrderQr(context, o),
                   title: Text(o.offerTitle),
                   subtitle: Text(
                     '${o.firmName} · ${o.quantity} × '

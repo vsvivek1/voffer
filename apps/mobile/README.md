@@ -30,6 +30,15 @@ Kochi from the location chip if your device is elsewhere.
   and caps files at 1 MB.
 - Demo mode keeps photos in memory as `data:` URIs, so no server is needed.
 
+## Redeeming orders
+
+- Each order has a short code and a QR code (`voffer:order:<code>`) that the
+  customer opens from My orders and shows at the counter.
+- The shop taps the scanner icon, or "Scan to redeem" on Orders, and scans it
+  with `mobile_scanner`, or types the code.
+- `redeem_order` marks the order fulfilled only at the shop that sold it, and
+  only once. Firms can no longer change order status directly.
+
 ## Location and maps
 
 - Device location comes from `geolocator`. If the customer refuses, the feed
@@ -63,7 +72,8 @@ flutter run \
 | `lib/data/mock_repository.dart` | In-memory demo backend, used in tests |
 | `lib/data/supabase_repository.dart` | Supabase backend |
 | `lib/screens/customer/` | Feed, offer detail, my orders |
-| `lib/screens/firm/` | Firm dashboard and new-offer form |
+| `lib/screens/firm/` | Firm dashboard, new-offer form, redeem screen |
+| `lib/scanning/` | QR scanner (camera, or none in tests) |
 | `lib/screens/shop/` | Shop setup form and the customer-facing shop profile |
 | `lib/location/` | Device location, with fakes for tests |
 | `lib/photos/` | Camera and gallery picker, with fakes for tests |

@@ -41,6 +41,8 @@ dependencies:
   latlong2: ^0.10.1
   image_picker: ^1.2.3
   cached_network_image: ^4.0.4
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.4.2
 
 dev_dependencies:
   flutter_test:

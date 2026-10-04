@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_state.dart';
 import '../../format.dart';
 import '../../models/offer.dart';
+import '../../widgets/order_qr.dart';
 import '../../widgets/voffer_image.dart';
 import '../shop/shop_profile_screen.dart';
 
@@ -43,20 +44,7 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
         builder: (context) => AlertDialog(
           icon: const Icon(Icons.check_circle_outline, size: 48),
           title: const Text('Reserved!'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Show this code at ${order.firmName} and pay '
-                '${formatMoney(order.total)} there.',
-              ),
-              const SizedBox(height: 16),
-              SelectableText(
-                order.code,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            ],
-          ),
+          content: OrderQrCard(order: order),
           actions: [
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),

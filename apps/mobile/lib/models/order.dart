@@ -3,6 +3,19 @@ enum OrderStatus { reserved, fulfilled, cancelled }
 OrderStatus orderStatusFromString(String? value) => OrderStatus.values
     .firstWhere((s) => s.name == value, orElse: () => OrderStatus.reserved);
 
+const _qrPrefix = 'voffer:order:';
+
+/// The order code inside a scanned QR payload or typed by hand, or null when
+/// [text] is not one.
+String? parseOrderCode(String text) {
+  var code = text.trim();
+  if (code.toLowerCase().startsWith(_qrPrefix)) {
+    code = code.substring(_qrPrefix.length);
+  }
+  code = code.trim().toUpperCase();
+  return RegExp(r'^[A-Z0-9]{4,12}$').hasMatch(code) ? code : null;
+}
+
 /// A customer's purchase of an offer. Payment happens at the firm, so an
 /// order starts as [OrderStatus.reserved] and the firm marks it fulfilled.
 class Order {
@@ -19,6 +32,7 @@ class Order {
     required this.status,
     required this.code,
     required this.createdAt,
+    this.redeemedAt,
   });
 
   final String id;
@@ -36,9 +50,15 @@ class Order {
   final String code;
   final DateTime createdAt;
 
+  /// When the shop redeemed the order, if it has.
+  final DateTime? redeemedAt;
+
+  /// What the order's QR code encodes.
+  String get qrPayload => '$_qrPrefix$code';
+
   double get total => unitPrice * quantity;
 
-  Order copyWith({OrderStatus? status}) => Order(
+  Order copyWith({OrderStatus? status, DateTime? redeemedAt}) => Order(
     id: id,
     offerId: offerId,
     offerTitle: offerTitle,
@@ -51,6 +71,7 @@ class Order {
     status: status ?? this.status,
     code: code,
     createdAt: createdAt,
+    redeemedAt: redeemedAt ?? this.redeemedAt,
   );
 
   factory Order.fromMap(Map<String, dynamic> map) => Order(
@@ -66,5 +87,9 @@ class Order {
     status: orderStatusFromString(map['status'] as String?),
     code: map['code'] as String,
     createdAt: DateTime.parse(map['created_at'] as String),
+    redeemedAt: switch (map['redeemed_at']) {
+      final String at => DateTime.parse(at),
+      _ => null,
+    },
   );
 }
