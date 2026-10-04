@@ -257,10 +257,10 @@ class SupabaseVofferRepository implements VofferRepository {
   });
 
   @override
-  Future<void> updateOrderStatus(String orderId, OrderStatus status) => _guard(
-    () => _client
-        .from('orders')
-        .update({'status': status.name})
-        .eq('id', orderId),
-  );
+  Future<Order> redeemOrder(AppUser firm, String code) => _guard(() async {
+    final row = await _client
+        .rpc('redeem_order', params: {'p_code': code})
+        .single();
+    return Order.fromMap(row);
+  });
 }

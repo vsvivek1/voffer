@@ -8,6 +8,7 @@ import '../../models/shop.dart';
 import '../../widgets/offer_card.dart';
 import '../shop/shop_form_screen.dart';
 import 'create_offer_screen.dart';
+import 'redeem_screen.dart';
 
 class FirmHome extends StatefulWidget {
   const FirmHome({super.key});
@@ -64,6 +65,30 @@ class _FirmHomeState extends State<FirmHome> {
     }
   }
 
+  Future<void> _openRedeem() async {
+    final redeemed = await Navigator.of(context)
+        .push<bool>(MaterialPageRoute(builder: (_) => const RedeemScreen()));
+    if (redeemed == true) _refresh();
+  }
+
+  Future<void> _redeem(Order order) async {
+    final app = AppScope.read(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final redeemed = await app.repository.redeemOrder(app.user!, order.code);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Redeemed ${redeemed.code}. Collect ${formatMoney(redeemed.total)}.',
+          ),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+    _refresh();
+  }
+
   Future<void> _editShop(Shop shop) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -105,6 +130,11 @@ class _FirmHomeState extends State<FirmHome> {
         title: Text(shop.name),
         actions: [
           IconButton(
+            tooltip: 'Redeem an order',
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: _openRedeem,
+          ),
+          IconButton(
             tooltip: 'Edit shop',
             icon: const Icon(Icons.storefront),
             onPressed: () => _editShop(shop),
@@ -126,7 +156,11 @@ class _FirmHomeState extends State<FirmHome> {
               icon: const Icon(Icons.add),
               label: const Text('New offer'),
             )
-          : null,
+          : FloatingActionButton.extended(
+              onPressed: _openRedeem,
+              icon: const Icon(Icons.qr_code_scanner),
+              label: const Text('Scan to redeem'),
+            ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: (i) {
@@ -193,6 +227,7 @@ class _FirmHomeState extends State<FirmHome> {
         return const _Empty('Orders from customers will appear here.');
       }
       return ListView.separated(
+        padding: const EdgeInsets.only(bottom: 96),
         itemCount: orders.length,
         separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (context, i) {
@@ -207,11 +242,7 @@ class _FirmHomeState extends State<FirmHome> {
             isThreeLine: true,
             trailing: o.status == OrderStatus.reserved
                 ? FilledButton.tonal(
-                    onPressed: () async {
-                      await AppScope.read(context).repository
-                          .updateOrderStatus(o.id, OrderStatus.fulfilled);
-                      _refresh();
-                    },
+                    onPressed: () => _redeem(o),
                     child: const Text('Redeem'),
                   )
                 : Text(o.status.name),

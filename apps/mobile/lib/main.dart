@@ -8,6 +8,7 @@ import 'data/supabase_repository.dart';
 import 'data/voffer_repository.dart';
 import 'location/location_service.dart';
 import 'photos/photo_picker.dart';
+import 'scanning/qr_scanner.dart';
 import 'screens/customer/customer_home.dart';
 import 'screens/firm/firm_home.dart';
 import 'screens/sign_in_screen.dart';
@@ -30,6 +31,7 @@ Future<void> main() async {
         repository,
         location: const DeviceLocationService(),
         photos: const DevicePhotoPicker(),
+        scanner: const DeviceQrScanner(),
       )..restore(),
     ),
   );

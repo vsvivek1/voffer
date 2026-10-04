@@ -68,5 +68,7 @@ abstract class VofferRepository {
 
   Future<List<Order>> fetchFirmOrders(String firmId);
 
-  Future<void> updateOrderStatus(String orderId, OrderStatus status);
+  /// Marks [firm]'s open order with [code] as fulfilled. Fails when the code
+  /// is unknown at this shop, already redeemed, or cancelled.
+  Future<Order> redeemOrder(AppUser firm, String code);
 }
