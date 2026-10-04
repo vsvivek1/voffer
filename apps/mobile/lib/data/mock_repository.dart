@@ -4,6 +4,7 @@ import '../models/app_user.dart';
 import '../models/offer.dart';
 import '../models/order.dart';
 import '../models/shop.dart';
+import '../photos/photo_picker.dart';
 import 'voffer_repository.dart';
 
 /// In-memory backend seeded with demo firms, shops in Kochi and offers. Used when no
@@ -207,6 +208,7 @@ class MockVofferRepository implements VofferRepository {
       location: details.location,
       phone: _blankToNull(details.phone),
       hours: _blankToNull(details.hours),
+      logoUrl: _blankToNull(details.logoUrl),
     );
     _shops[firm.id] = shop;
     final updated = firm.copyWith(displayName: name);
@@ -218,6 +220,19 @@ class MockVofferRepository implements VofferRepository {
       }
     }
     return shop;
+  }
+
+  @override
+  Future<String> uploadPhoto(AppUser firm, PickedPhoto photo) async {
+    if (!firm.isFirm) throw RepositoryException('Only firms can add photos.');
+    if (photo.bytes.length > maxPhotoBytes) {
+      throw RepositoryException('That photo is too large.');
+    }
+    // Kept inline so demo mode needs no server.
+    return Uri.dataFromBytes(
+      photo.bytes,
+      mimeType: photo.contentType,
+    ).toString();
   }
 
   static String? _blankToNull(String? v) =>

@@ -3,13 +3,19 @@ import 'package:flutter/widgets.dart';
 import 'data/voffer_repository.dart';
 import 'location/location_service.dart';
 import 'models/app_user.dart';
+import 'photos/photo_picker.dart';
 
-/// Holds the backend, location provider and the signed-in user for the widget tree.
+/// Holds the backend, device services and the signed-in user for the widget tree.
 class AppState extends ChangeNotifier {
-  AppState(this.repository, {this.location = const NoLocationService()});
+  AppState(
+    this.repository, {
+    this.location = const NoLocationService(),
+    this.photos = const NoPhotoPicker(),
+  });
 
   final VofferRepository repository;
   final LocationService location;
+  final PhotoPicker photos;
   AppUser? _user;
   bool _restoring = true;
 

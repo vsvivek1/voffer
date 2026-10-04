@@ -232,6 +232,8 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.ensureVisible(find.text('Save and continue'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Save and continue'));
       await tester.pumpAndSettle();
       expect(find.text('Set where your shop is.'), findsOneWidget);
@@ -244,6 +246,8 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.ensureVisible(find.text('Save and continue'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Save and continue'));
       await tester.pumpAndSettle();
 

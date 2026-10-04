@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../format.dart';
 import '../models/offer.dart';
+import 'voffer_image.dart';
 
 class OfferCard extends StatelessWidget {
   const OfferCard({super.key, required this.offer, this.onTap, this.trailing});
@@ -24,11 +25,7 @@ class OfferCard extends StatelessWidget {
             if (offer.imageUrl != null && offer.imageUrl!.isNotEmpty)
               AspectRatio(
                 aspectRatio: 16 / 9,
-                child: Image.network(
-                  offer.imageUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                ),
+                child: VofferImage(offer.imageUrl!),
               ),
             Padding(
               padding: const EdgeInsets.all(16),
