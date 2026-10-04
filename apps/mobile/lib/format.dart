@@ -16,3 +16,9 @@ String formatTimeLeft(DateTime expiresAt, {DateTime? now}) {
   if (left.inHours >= 1) return '${left.inHours}h left';
   return '${left.inMinutes.clamp(1, 59)}m left';
 }
+
+String formatDistance(double km) {
+  if (km < 1) return '${(km * 1000).round().clamp(50, 999) ~/ 50 * 50} m';
+  if (km < 10) return '${km.toStringAsFixed(1)} km';
+  return '${km.round()} km';
+}

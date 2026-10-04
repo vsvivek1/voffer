@@ -4,7 +4,9 @@ import '../../app_state.dart';
 import '../../format.dart';
 import '../../models/offer.dart';
 import '../../models/order.dart';
+import '../../models/shop.dart';
 import '../../widgets/offer_card.dart';
+import '../shop/shop_form_screen.dart';
 import 'create_offer_screen.dart';
 
 class FirmHome extends StatefulWidget {
@@ -16,13 +18,29 @@ class FirmHome extends StatefulWidget {
 
 class _FirmHomeState extends State<FirmHome> {
   int _tab = 0;
+  Shop? _shop;
+  bool _shopLoaded = false;
+  Object? _shopError;
   late Future<List<Offer>> _offers;
   late Future<List<Order>> _orders;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_shopLoaded && _shopError == null) _loadShop();
     _load();
+  }
+
+  Future<void> _loadShop() async {
+    final app = AppScope.read(context);
+    try {
+      final shop = await app.repository.fetchShop(app.user!.id);
+      if (mounted) setState(() => _shop = shop);
+    } catch (e) {
+      if (mounted) setState(() => _shopError = e);
+    } finally {
+      if (mounted) setState(() => _shopLoaded = true);
+    }
   }
 
   void _load() {
@@ -46,13 +64,51 @@ class _FirmHomeState extends State<FirmHome> {
     }
   }
 
+  Future<void> _editShop(Shop shop) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopFormScreen(
+          shop: shop,
+          onSaved: (saved) {
+            Navigator.of(context).pop();
+            setState(() => _shop = saved);
+          },
+        ),
+      ),
+    );
+    _refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final app = AppScope.of(context);
+    AppScope.of(context);
+    if (_shopError != null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: _Empty('Could not load your shop.\n$_shopError'),
+      );
+    }
+    if (!_shopLoaded) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    final shop = _shop;
+    if (shop == null) {
+      return ShopFormScreen(onSaved: (saved) => setState(() => _shop = saved));
+    }
+    return _buildDashboard(shop);
+  }
+
+  Widget _buildDashboard(Shop shop) {
+    final app = AppScope.read(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(app.user?.displayName ?? ''),
+        title: Text(shop.name),
         actions: [
+          IconButton(
+            tooltip: 'Edit shop',
+            icon: const Icon(Icons.storefront),
+            onPressed: () => _editShop(shop),
+          ),
           IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout),

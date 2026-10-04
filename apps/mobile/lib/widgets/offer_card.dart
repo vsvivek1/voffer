@@ -39,7 +39,10 @@ class OfferCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          offer.firmName,
+                          offer.distanceKm == null
+                              ? offer.firmName
+                              : '${offer.firmName} · '
+                                    '${formatDistance(offer.distanceKm!)}',
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: theme.colorScheme.primary,
                           ),
@@ -90,6 +93,7 @@ class OfferCard extends StatelessWidget {
 
   String _statusText() {
     if (!offer.isActive) return 'Paused';
+    if (offer.isScheduled) return 'Starts ${formatDate(offer.startsAt)}';
     if (offer.isSoldOut) return 'Sold out';
     final left = formatTimeLeft(offer.expiresAt);
     final stock = offer.quantityAvailable;
