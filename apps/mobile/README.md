@@ -39,6 +39,22 @@ Kochi from the location chip if your device is elsewhere.
 - `redeem_order` marks the order fulfilled only at the shop that sold it, and
   only once. Firms can no longer change order status directly.
 
+## Follows and alerts
+
+- Customers tap Follow on a shop's page. When that shop publishes, a database
+  trigger adds an alert for each follower, shown in the Alerts tab with an
+  unread badge. A scheduled offer's alert appears when the offer starts.
+- Firms see their follower count on My offers.
+- Alerts are in-app only for now. Phone push notifications need a Firebase
+  project, which is the next step.
+
+## India and USA
+
+- Each shop picks India or USA. Its offers and orders carry its currency
+  (INR or USD), set by the database.
+- The city list covers both countries, and the feed uses miles and US cities
+  first when the device's region is the USA.
+
 ## Location and maps
 
 - Device location comes from `geolocator`. If the customer refuses, the feed
@@ -62,7 +78,8 @@ flutter run \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable key>
 ```
 
-`CURRENCY` (default `INR`) sets the currency shown.
+Prices show in each shop's currency: rupees for shops in India, dollars in
+the USA. Distances show in miles when the device's region is the USA.
 
 ## Code layout
 

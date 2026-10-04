@@ -24,6 +24,7 @@ class _FirmHomeState extends State<FirmHome> {
   Object? _shopError;
   late Future<List<Offer>> _offers;
   late Future<List<Order>> _orders;
+  late Future<int> _followers;
 
   @override
   void didChangeDependencies() {
@@ -48,6 +49,7 @@ class _FirmHomeState extends State<FirmHome> {
     final app = AppScope.read(context);
     _offers = app.repository.fetchFirmOffers(app.user!.id);
     _orders = app.repository.fetchFirmOrders(app.user!.id);
+    _followers = app.repository.followerCount(app.user!.id);
   }
 
   Future<void> _refresh() async {
@@ -79,7 +81,7 @@ class _FirmHomeState extends State<FirmHome> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            'Redeemed ${redeemed.code}. Collect ${formatMoney(redeemed.total)}.',
+            'Redeemed ${redeemed.code}. Collect ${formatMoney(redeemed.total, redeemed.currency)}.',
           ),
         ),
       );
@@ -197,9 +199,10 @@ class _FirmHomeState extends State<FirmHome> {
       }
       return ListView.builder(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
-        itemCount: offers.length,
+        itemCount: offers.length + 1,
         itemBuilder: (context, i) {
-          final offer = offers[i];
+          if (i == 0) return _FollowerNote(_followers);
+          final offer = offers[i - 1];
           return OfferCard(
             offer: offer,
             trailing: Switch(
@@ -236,7 +239,7 @@ class _FirmHomeState extends State<FirmHome> {
             title: Text('${o.code} · ${o.offerTitle}'),
             subtitle: Text(
               '${o.customerName} · ${o.quantity} × '
-              '${formatMoney(o.unitPrice)} = ${formatMoney(o.total)}\n'
+              '${formatMoney(o.unitPrice, o.currency)} = ${formatMoney(o.total, o.currency)}\n'
               '${formatDate(o.createdAt)}',
             ),
             isThreeLine: true,
@@ -248,6 +251,32 @@ class _FirmHomeState extends State<FirmHome> {
                 : Text(o.status.name),
           );
         },
+      );
+    },
+  );
+}
+
+/// Tells the firm how many customers hear about its new offers.
+class _FollowerNote extends StatelessWidget {
+  const _FollowerNote(this.followers);
+  final Future<int> followers;
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<int>(
+    future: followers,
+    builder: (context, snap) {
+      final n = snap.data;
+      if (n == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+        child: Text(
+          n == 0
+              ? 'No followers yet. Customers who follow your shop get an '
+                    'alert when you publish.'
+              : '$n ${n == 1 ? 'follower gets' : 'followers get'} an alert '
+                    'when you publish.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
       );
     },
   );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../app_state.dart';
+import '../../format.dart';
+import '../../models/market.dart';
 import '../../models/offer.dart';
 import '../../models/shop.dart';
 import '../../widgets/offer_card.dart';
@@ -16,13 +18,11 @@ class FeedScreen extends StatefulWidget {
 /// Where the feed is centred: the device's position or a chosen city.
 typedef _Place = ({String label, GeoPoint point});
 
-const _radiusOptions = [2.0, 5.0, 10.0, 25.0];
-
 class _FeedScreenState extends State<FeedScreen> {
   String? _category;
   String _query = '';
   _Place? _place;
-  double _radiusKm = 10;
+  double _radiusKm = defaultRadiusKm;
   bool _triedDevice = false;
   late Future<List<Offer>> _future;
 
@@ -132,7 +132,7 @@ class _FeedScreenState extends State<FeedScreen> {
                         label: Text(
                           _place == null
                               ? 'Choose location'
-                              : '${_place!.label} · ${_radiusKm.round()} km',
+                              : '${_place!.label} · ${formatRadius(_radiusKm)}',
                         ),
                         onPressed: _chooseLocation,
                       ),
@@ -178,7 +178,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   )
                 : null;
             if (offers.isEmpty) {
-              final wider = _radiusOptions.where((r) => r > _radiusKm);
+              final wider = radiusOptionsKm.where((r) => r > _radiusKm);
               return ListView(
                 padding: const EdgeInsets.all(12),
                 children: [
@@ -186,9 +186,9 @@ class _FeedScreenState extends State<FeedScreen> {
                   if (_place != null && wider.isNotEmpty)
                     _Banner(
                       text:
-                          'No offers within ${_radiusKm.round()} km right '
+                          'No offers within ${formatRadius(_radiusKm)} right '
                           'now.',
-                      action: 'Search ${wider.first.round()} km',
+                      action: 'Search ${formatRadius(wider.first)}',
                       onPressed: () {
                         _radiusKm = wider.first;
                         _refresh();
@@ -271,8 +271,8 @@ class _LocationSheetState extends State<_LocationSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: SegmentedButton<double>(
                 segments: [
-                  for (final r in _radiusOptions)
-                    ButtonSegment(value: r, label: Text('${r.round()} km')),
+                  for (final r in radiusOptionsKm)
+                    ButtonSegment(value: r, label: Text(formatRadius(r))),
                 ],
                 selected: {_radiusKm},
                 onSelectionChanged: (v) => setState(() => _radiusKm = v.first),
@@ -289,12 +289,20 @@ class _LocationSheetState extends State<_LocationSheet> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Text('Or pick a city', style: theme.textTheme.titleSmall),
             ),
-            for (final city in cities.keys)
-              ListTile(
-                leading: const Icon(Icons.location_city),
-                title: Text(city),
-                onTap: () => _done(city: city),
+            // The viewer's own country first.
+            for (final country
+                in useMiles ? Country.values.reversed : Country.values) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Text(country.label, style: theme.textTheme.labelLarge),
               ),
+              for (final city in citiesByCountry[country]!.keys)
+                ListTile(
+                  leading: const Icon(Icons.location_city),
+                  title: Text(city),
+                  onTap: () => _done(city: city),
+                ),
+            ],
             ListTile(
               leading: const Icon(Icons.check),
               title: const Text('Just change the distance'),

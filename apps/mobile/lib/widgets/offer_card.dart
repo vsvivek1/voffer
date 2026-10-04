@@ -62,13 +62,13 @@ class OfferCard extends StatelessWidget {
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
-                        formatMoney(offer.price),
+                        formatMoney(offer.price, offer.currency),
                         style: theme.textTheme.titleLarge,
                       ),
                       if (offer.originalPrice != null) ...[
                         const SizedBox(width: 8),
                         Text(
-                          formatMoney(offer.originalPrice!),
+                          formatMoney(offer.originalPrice!, offer.currency),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             decoration: TextDecoration.lineThrough,
                             color: theme.colorScheme.outline,

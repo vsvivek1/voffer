@@ -6,6 +6,7 @@ import 'config.dart';
 import 'data/mock_repository.dart';
 import 'data/supabase_repository.dart';
 import 'data/voffer_repository.dart';
+import 'format.dart';
 import 'location/location_service.dart';
 import 'photos/photo_picker.dart';
 import 'scanning/qr_scanner.dart';
@@ -14,7 +15,8 @@ import 'screens/firm/firm_home.dart';
 import 'screens/sign_in_screen.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  useMiles = binding.platformDispatcher.locale.countryCode == 'US';
   final VofferRepository repository;
   if (AppConfig.useSupabase) {
     await Supabase.initialize(

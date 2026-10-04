@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/alert.dart';
 import '../models/app_user.dart';
 import '../models/offer.dart';
 import '../models/order.dart';
@@ -130,7 +131,10 @@ class SupabaseVofferRepository implements VofferRepository {
   Future<Shop?> fetchShop(String shopId) => _guard(() async {
     final row = await _client
         .from('shops')
-        .select('id, name, category, address, phone, hours, lat, lng, logo_url')
+        .select(
+          'id, name, category, address, phone, hours, lat, lng, logo_url, '
+          'country',
+        )
         .eq('id', shopId)
         .maybeSingle();
     return row == null ? null : Shop.fromMap(row);
@@ -150,6 +154,7 @@ class SupabaseVofferRepository implements VofferRepository {
             'p_lat': details.location.lat,
             'p_lng': details.location.lng,
             'p_logo_url': details.logoUrl,
+            'p_country': details.country.code,
           },
         )
         .single();
@@ -180,6 +185,63 @@ class SupabaseVofferRepository implements VofferRepository {
         );
         return bucket.getPublicUrl(path);
       });
+
+  @override
+  Future<bool> isFollowing(AppUser customer, String shopId) => _guard(() async {
+    final row = await _client
+        .from('follows')
+        .select('shop_id')
+        .eq('customer_id', customer.id)
+        .eq('shop_id', shopId)
+        .maybeSingle();
+    return row != null;
+  });
+
+  @override
+  Future<void> setFollowing(AppUser customer, String shopId, bool follow) =>
+      _guard(() async {
+        if (follow) {
+          await _client.from('follows').upsert({
+            'customer_id': customer.id,
+            'shop_id': shopId,
+          }, ignoreDuplicates: true);
+        } else {
+          await _client
+              .from('follows')
+              .delete()
+              .eq('customer_id', customer.id)
+              .eq('shop_id', shopId);
+        }
+      });
+
+  @override
+  Future<int> followerCount(String shopId) => _guard(() async {
+    final count = await _client.rpc(
+      'shop_follower_count',
+      params: {'p_shop_id': shopId},
+    );
+    return (count as num).toInt();
+  });
+
+  @override
+  Future<List<Alert>> fetchAlerts(AppUser user) => _guard(() async {
+    final rows = await _client
+        .from('alerts')
+        .select()
+        .eq('user_id', user.id)
+        .order('visible_at', ascending: false)
+        .limit(100);
+    return rows.map(Alert.fromMap).toList();
+  });
+
+  @override
+  Future<void> markAlertsRead(AppUser user) => _guard(
+    () => _client
+        .from('alerts')
+        .update({'read_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('user_id', user.id)
+        .isFilter('read_at', null),
+  );
 
   @override
   Future<List<Offer>> fetchShopOffers(String shopId) => _guard(() async {

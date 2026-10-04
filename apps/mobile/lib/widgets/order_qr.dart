@@ -46,7 +46,7 @@ class OrderQrCard extends StatelessWidget {
         Text(switch (order.status) {
           OrderStatus.reserved =>
             'Show this at ${order.firmName} and pay '
-                '${formatMoney(order.total)} there.',
+                '${formatMoney(order.total, order.currency)} there.',
           OrderStatus.fulfilled =>
             order.redeemedAt == null
                 ? 'Redeemed'

@@ -71,7 +71,7 @@ class MyOrdersScreenState extends State<MyOrdersScreen> {
                   title: Text(o.offerTitle),
                   subtitle: Text(
                     '${o.firmName} · ${o.quantity} × '
-                    '${formatMoney(o.unitPrice)} · ${formatDate(o.createdAt)}',
+                    '${formatMoney(o.unitPrice, o.currency)} · ${formatDate(o.createdAt)}',
                   ),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
