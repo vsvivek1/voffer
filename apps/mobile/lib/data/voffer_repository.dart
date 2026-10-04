@@ -2,6 +2,7 @@ import '../models/app_user.dart';
 import '../models/offer.dart';
 import '../models/order.dart';
 import '../models/shop.dart';
+import '../photos/photo_picker.dart';
 
 class RepositoryException implements Exception {
   RepositoryException(this.message);
@@ -46,6 +47,9 @@ abstract class VofferRepository {
   /// Creates or updates [firm]'s shop. The shop name also becomes the firm's
   /// display name.
   Future<Shop> saveShop(AppUser firm, ShopDetails details);
+
+  /// Stores [photo] for [firm] and returns a URL anyone can view it at.
+  Future<String> uploadPhoto(AppUser firm, PickedPhoto photo);
 
   /// Live offers from one shop, newest first.
   Future<List<Offer>> fetchShopOffers(String shopId);

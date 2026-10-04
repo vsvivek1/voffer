@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_state.dart';
 import '../../models/offer.dart';
 import '../../models/shop.dart';
+import '../../widgets/photo_field.dart';
 import '../../widgets/shop_map.dart';
 
 /// Sets up a firm's shop on first sign-in, or edits it later.
@@ -27,6 +28,9 @@ class _ShopFormScreenState extends State<ShopFormScreen> {
   late final _hours = TextEditingController(text: widget.shop?.hours);
   late String _category = widget.shop?.category ?? offerCategories.first;
   late GeoPoint? _location = widget.shop?.location;
+  late PhotoValue? _logo = widget.shop?.logoUrl == null
+      ? null
+      : PhotoValue.uploaded(widget.shop!.logoUrl!);
   String? _locationError;
   bool _locating = false;
   bool _busy = false;
@@ -80,6 +84,7 @@ class _ShopFormScreenState extends State<ShopFormScreen> {
     final app = AppScope.read(context);
     setState(() => _busy = true);
     try {
+      final logoUrl = await PhotoValue.resolve(app, _logo);
       final shop = await app.repository.saveShop(
         app.user!,
         ShopDetails(
@@ -89,6 +94,7 @@ class _ShopFormScreenState extends State<ShopFormScreen> {
           location: _location!,
           phone: _phone.text.trim(),
           hours: _hours.text.trim(),
+          logoUrl: logoUrl,
         ),
       );
       app.setUser(app.user!.copyWith(displayName: shop.name));
@@ -180,6 +186,13 @@ class _ShopFormScreenState extends State<ShopFormScreen> {
               maxLength: 120,
             ),
             gap,
+            PhotoField(
+              label: 'Logo or shopfront photo (optional)',
+              value: _logo,
+              aspectRatio: 1,
+              onChanged: (v) => setState(() => _logo = v),
+            ),
+            const SizedBox(height: 24),
             Text('Location on the map', style: theme.textTheme.titleSmall),
             const SizedBox(height: 4),
             Text(

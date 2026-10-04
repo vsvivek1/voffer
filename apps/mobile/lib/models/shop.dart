@@ -30,6 +30,7 @@ class Shop {
     required this.location,
     this.phone,
     this.hours,
+    this.logoUrl,
   });
 
   final String id;
@@ -41,6 +42,7 @@ class Shop {
 
   /// Free text such as "Mon–Sat, 9am–9pm".
   final String? hours;
+  final String? logoUrl;
 
   factory Shop.fromMap(Map<String, dynamic> map) => Shop(
     id: map['id'] as String,
@@ -53,6 +55,7 @@ class Shop {
     ),
     phone: map['phone'] as String?,
     hours: map['hours'] as String?,
+    logoUrl: map['logo_url'] as String?,
   );
 }
 
@@ -65,6 +68,7 @@ class ShopDetails {
     required this.location,
     this.phone,
     this.hours,
+    this.logoUrl,
   });
 
   final String name;
@@ -73,6 +77,7 @@ class ShopDetails {
   final GeoPoint location;
   final String? phone;
   final String? hours;
+  final String? logoUrl;
 }
 
 /// Places a customer can pick when they don't share their location.

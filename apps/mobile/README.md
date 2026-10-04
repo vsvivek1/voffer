@@ -7,7 +7,7 @@ and redeem at the firm with a six-character code.
   distance, search and filter by category, open a shop's profile, buy one or
   more units and see their orders and codes.
 - **Firms** set up a shop (address, map pin, hours, phone) on first sign-in,
-  publish offers (price, usual price, stock, start and expiry, image), pause
+  publish offers (price, usual price, stock, start and expiry, photo), pause
   them, and mark customer orders as redeemed.
 
 ## Run it
@@ -20,6 +20,15 @@ flutter run                     # demo mode, in-memory data
 Demo accounts (password `demo1234`): `customer@demo.voffer`,
 `cafe@demo.voffer`, `store@demo.voffer`. The demo shops are in Kochi, so pick
 Kochi from the location chip if your device is elsewhere.
+
+## Photos
+
+- Firms take or choose a photo for each offer and a logo for their shop.
+  `image_picker` resizes to 1280 px and re-encodes as JPEG on the device.
+- Uploads go to the public `voffer-images` Storage bucket under the firm's
+  user id; the bucket policy stops anyone writing outside their own folder
+  and caps files at 1 MB.
+- Demo mode keeps photos in memory as `data:` URIs, so no server is needed.
 
 ## Location and maps
 
@@ -57,6 +66,7 @@ flutter run \
 | `lib/screens/firm/` | Firm dashboard and new-offer form |
 | `lib/screens/shop/` | Shop setup form and the customer-facing shop profile |
 | `lib/location/` | Device location, with fakes for tests |
+| `lib/photos/` | Camera and gallery picker, with fakes for tests |
 | `lib/widgets/shop_map.dart` | Map pin picker and shop map |
 
 ## Checks

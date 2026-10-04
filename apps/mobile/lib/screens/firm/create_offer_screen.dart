@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_state.dart';
 import '../../format.dart';
 import '../../models/offer.dart';
+import '../../widgets/photo_field.dart';
 
 class CreateOfferScreen extends StatefulWidget {
   const CreateOfferScreen({super.key});
@@ -18,22 +19,15 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final _price = TextEditingController();
   final _originalPrice = TextEditingController();
   final _quantity = TextEditingController();
-  final _imageUrl = TextEditingController();
   String _category = offerCategories.first;
+  PhotoValue? _photo;
   DateTime? _startsAt;
   DateTime _expiresAt = DateTime.now().add(const Duration(days: 7));
   bool _busy = false;
 
   @override
   void dispose() {
-    for (final c in [
-      _title,
-      _description,
-      _price,
-      _originalPrice,
-      _quantity,
-      _imageUrl,
-    ]) {
+    for (final c in [_title, _description, _price, _originalPrice, _quantity]) {
       c.dispose();
     }
     super.dispose();
@@ -89,6 +83,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     final app = AppScope.read(context);
     setState(() => _busy = true);
     try {
+      final imageUrl = await PhotoValue.resolve(app, _photo);
       await app.repository.publishOffer(
         app.user!,
         NewOffer(
@@ -97,9 +92,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
           price: double.parse(_price.text),
           originalPrice: double.tryParse(_originalPrice.text),
           category: _category,
-          imageUrl: _imageUrl.text.trim().isEmpty
-              ? null
-              : _imageUrl.text.trim(),
+          imageUrl: imageUrl,
           quantityAvailable: int.tryParse(_quantity.text),
           startsAt: startsAt != null && startsAt.isAfter(DateTime.now())
               ? startsAt
@@ -208,12 +201,10 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               },
             ),
             gap,
-            TextFormField(
-              controller: _imageUrl,
-              decoration: const InputDecoration(
-                labelText: 'Image URL (optional)',
-              ),
-              keyboardType: TextInputType.url,
+            PhotoField(
+              label: 'Photo (optional)',
+              value: _photo,
+              onChanged: (v) => setState(() => _photo = v),
             ),
             gap,
             ListTile(

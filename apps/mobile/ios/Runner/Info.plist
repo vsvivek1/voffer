@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Voffer uses the camera so you can take photos of your offers and shop.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Voffer lets you choose photos of your offers and shop from your library.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Voffer uses your location to show offers from shops near you and to pin your shop on the map.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>

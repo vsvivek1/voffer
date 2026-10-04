@@ -1,9 +1,12 @@
+import 'dart:math';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/app_user.dart';
 import '../models/offer.dart';
 import '../models/order.dart';
 import '../models/shop.dart';
+import '../photos/photo_picker.dart';
 import 'voffer_repository.dart';
 
 /// Backend backed by the schema in `supabase/migrations`.
@@ -18,6 +21,8 @@ class SupabaseVofferRepository implements VofferRepository {
     } on AuthException catch (e) {
       throw RepositoryException(e.message);
     } on PostgrestException catch (e) {
+      throw RepositoryException(e.message);
+    } on StorageException catch (e) {
       throw RepositoryException(e.message);
     }
   }
@@ -125,7 +130,7 @@ class SupabaseVofferRepository implements VofferRepository {
   Future<Shop?> fetchShop(String shopId) => _guard(() async {
     final row = await _client
         .from('shops')
-        .select('id, name, category, address, phone, hours, lat, lng')
+        .select('id, name, category, address, phone, hours, lat, lng, logo_url')
         .eq('id', shopId)
         .maybeSingle();
     return row == null ? null : Shop.fromMap(row);
@@ -144,11 +149,37 @@ class SupabaseVofferRepository implements VofferRepository {
             'p_hours': details.hours,
             'p_lat': details.location.lat,
             'p_lng': details.location.lng,
+            'p_logo_url': details.logoUrl,
           },
         )
         .single();
     return Shop.fromMap(row);
   });
+
+  static const _imageBucket = 'voffer-images';
+  final _random = Random.secure();
+
+  @override
+  Future<String> uploadPhoto(AppUser firm, PickedPhoto photo) =>
+      _guard(() async {
+        // The bucket policy only lets a firm write inside its own folder.
+        final name = List.generate(
+          16,
+          (_) => _random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+        ).join();
+        final ext = photo.contentType == 'image/png' ? 'png' : 'jpg';
+        final path = '${firm.id}/$name.$ext';
+        final bucket = _client.storage.from(_imageBucket);
+        await bucket.uploadBinary(
+          path,
+          photo.bytes,
+          fileOptions: FileOptions(
+            contentType: photo.contentType,
+            cacheControl: '31536000',
+          ),
+        );
+        return bucket.getPublicUrl(path);
+      });
 
   @override
   Future<List<Offer>> fetchShopOffers(String shopId) => _guard(() async {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_state.dart';
 import '../../format.dart';
 import '../../models/offer.dart';
+import '../../widgets/voffer_image.dart';
 import '../shop/shop_profile_screen.dart';
 
 class OfferDetailScreen extends StatefulWidget {
@@ -89,9 +90,9 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
               padding: const EdgeInsets.only(bottom: 16),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  offer.imageUrl!,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: VofferImage(offer.imageUrl!),
                 ),
               ),
             ),

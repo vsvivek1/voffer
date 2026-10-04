@@ -5,6 +5,7 @@ import '../../models/offer.dart';
 import '../../models/shop.dart';
 import '../../widgets/offer_card.dart';
 import '../../widgets/shop_map.dart';
+import '../../widgets/voffer_image.dart';
 import '../customer/offer_detail_screen.dart';
 
 /// A shop's details and its live offers, as customers see them.
@@ -82,7 +83,14 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.storefront),
+                  leading: shop.logoUrl == null
+                      ? const Icon(Icons.storefront)
+                      : ClipOval(
+                          child: SizedBox.square(
+                            dimension: 48,
+                            child: VofferImage(shop.logoUrl!),
+                          ),
+                        ),
                   title: Text(shop.name, style: theme.textTheme.titleLarge),
                   subtitle: Text(shop.category),
                 ),
