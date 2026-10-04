@@ -33,6 +33,7 @@ class Order {
     required this.code,
     required this.createdAt,
     this.redeemedAt,
+    this.currency = 'INR',
   });
 
   final String id;
@@ -44,6 +45,9 @@ class Order {
   final String customerName;
   final int quantity;
   final double unitPrice;
+
+  /// ISO 4217 code of [unitPrice].
+  final String currency;
   final OrderStatus status;
 
   /// Short code the customer shows at the firm to redeem the order.
@@ -72,6 +76,7 @@ class Order {
     code: code,
     createdAt: createdAt,
     redeemedAt: redeemedAt ?? this.redeemedAt,
+    currency: currency,
   );
 
   factory Order.fromMap(Map<String, dynamic> map) => Order(
@@ -91,5 +96,6 @@ class Order {
       final String at => DateTime.parse(at),
       _ => null,
     },
+    currency: (map['currency'] ?? 'INR') as String,
   );
 }

@@ -16,6 +16,7 @@ class Offer {
     this.isActive = true,
     this.distanceKm,
     this.shopAddress,
+    this.currency = 'INR',
   }) : startsAt = startsAt ?? createdAt;
 
   final String id;
@@ -25,6 +26,9 @@ class Offer {
   final String description;
   final double price;
   final double? originalPrice;
+
+  /// ISO 4217 code of [price], from the shop's country.
+  final String currency;
   final String category;
   final String? imageUrl;
 
@@ -59,6 +63,7 @@ class Offer {
     String? firmName,
     double? distanceKm,
     String? shopAddress,
+    String? currency,
   }) => Offer(
     id: id,
     firmId: firmId,
@@ -76,6 +81,7 @@ class Offer {
     isActive: isActive ?? this.isActive,
     distanceKm: distanceKm ?? this.distanceKm,
     shopAddress: shopAddress ?? this.shopAddress,
+    currency: currency ?? this.currency,
   );
 
   factory Offer.fromMap(Map<String, dynamic> map) => Offer(
@@ -101,6 +107,7 @@ class Offer {
     isActive: (map['is_active'] ?? true) as bool,
     distanceKm: (map['distance_km'] as num?)?.toDouble(),
     shopAddress: map['shop_address'] as String?,
+    currency: (map['currency'] ?? 'INR') as String,
   );
 }
 

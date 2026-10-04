@@ -7,10 +7,6 @@ class AppConfig {
   static const supabasePublishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
   );
-  static const currencyCode = String.fromEnvironment(
-    'CURRENCY',
-    defaultValue: 'INR',
-  );
 
   static bool get useSupabase =>
       supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;

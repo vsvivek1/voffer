@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../app_state.dart';
+import '../../format.dart';
+import '../../models/market.dart';
 import '../../models/offer.dart';
 import '../../models/shop.dart';
 import '../../widgets/photo_field.dart';
@@ -28,6 +30,9 @@ class _ShopFormScreenState extends State<ShopFormScreen> {
   late final _hours = TextEditingController(text: widget.shop?.hours);
   late String _category = widget.shop?.category ?? offerCategories.first;
   late GeoPoint? _location = widget.shop?.location;
+  late Country _country =
+      widget.shop?.country ?? (useMiles ? Country.usa : Country.india);
+  bool _countryChosen = false;
   late PhotoValue? _logo = widget.shop?.logoUrl == null
       ? null
       : PhotoValue.uploaded(widget.shop!.logoUrl!);
@@ -52,7 +57,7 @@ class _ShopFormScreenState extends State<ShopFormScreen> {
     });
     try {
       final point = await AppScope.read(context).location.current();
-      if (mounted) setState(() => _location = point);
+      if (mounted) setState(() => _setLocation(point));
     } catch (e) {
       if (mounted) setState(() => _locationError = e.toString());
     } finally {
@@ -60,19 +65,23 @@ class _ShopFormScreenState extends State<ShopFormScreen> {
     }
   }
 
+  /// Moves the pin, and guesses the country until the firm picks one.
+  void _setLocation(GeoPoint point) {
+    _location = point;
+    _locationError = null;
+    if (!_countryChosen) _country = Country.near(point.lng);
+  }
+
   Future<void> _pickOnMap() async {
+    final fallback = _country == Country.usa
+        ? cities['New York']!
+        : cities['Kochi']!;
     final picked = await Navigator.of(context).push<GeoPoint>(
       MaterialPageRoute(
-        builder: (_) =>
-            PickLocationScreen(initial: _location ?? cities['Kochi']!),
+        builder: (_) => PickLocationScreen(initial: _location ?? fallback),
       ),
     );
-    if (picked != null && mounted) {
-      setState(() {
-        _location = picked;
-        _locationError = null;
-      });
-    }
+    if (picked != null && mounted) setState(() => _setLocation(picked));
   }
 
   Future<void> _save() async {
@@ -95,6 +104,7 @@ class _ShopFormScreenState extends State<ShopFormScreen> {
           phone: _phone.text.trim(),
           hours: _hours.text.trim(),
           logoUrl: logoUrl,
+          country: _country,
         ),
       );
       app.setUser(app.user!.copyWith(displayName: shop.name));
@@ -157,6 +167,28 @@ class _ShopFormScreenState extends State<ShopFormScreen> {
                   DropdownMenuItem(value: c, child: Text(c)),
               ],
               onChanged: (v) => setState(() => _category = v ?? _category),
+            ),
+            gap,
+            Text('Country', style: theme.textTheme.titleSmall),
+            const SizedBox(height: 4),
+            SegmentedButton<Country>(
+              segments: [
+                for (final c in Country.values)
+                  ButtonSegment(
+                    value: c,
+                    label: Text('${c.label} · ${c.currency}'),
+                  ),
+              ],
+              selected: {_country},
+              onSelectionChanged: (v) => setState(() {
+                _country = v.first;
+                _countryChosen = true;
+              }),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Your prices show in ${_country.currency}.',
+              style: theme.textTheme.bodySmall,
             ),
             gap,
             TextFormField(

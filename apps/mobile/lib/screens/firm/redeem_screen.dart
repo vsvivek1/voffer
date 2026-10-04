@@ -156,8 +156,8 @@ class _Result extends StatelessWidget {
             : Text(
                 '${o.offerTitle}\n'
                 '${o.customerName} · ${o.quantity} × '
-                '${formatMoney(o.unitPrice)}\n'
-                'Collect ${formatMoney(o.total)}',
+                '${formatMoney(o.unitPrice, o.currency)}\n'
+                'Collect ${formatMoney(o.total, o.currency)}',
               ),
         isThreeLine: o != null,
       ),

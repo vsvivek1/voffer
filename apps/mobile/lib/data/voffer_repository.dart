@@ -1,3 +1,4 @@
+import '../models/alert.dart';
 import '../models/app_user.dart';
 import '../models/offer.dart';
 import '../models/order.dart';
@@ -50,6 +51,21 @@ abstract class VofferRepository {
 
   /// Stores [photo] for [firm] and returns a URL anyone can view it at.
   Future<String> uploadPhoto(AppUser firm, PickedPhoto photo);
+
+  /// Whether [customer] follows the shop [shopId].
+  Future<bool> isFollowing(AppUser customer, String shopId);
+
+  /// Follows or unfollows a shop. Followers get an [Alert] for each new
+  /// offer the shop publishes.
+  Future<void> setFollowing(AppUser customer, String shopId, bool follow);
+
+  /// How many customers follow the shop [shopId].
+  Future<int> followerCount(String shopId);
+
+  /// [user]'s alerts that are already visible, newest first.
+  Future<List<Alert>> fetchAlerts(AppUser user);
+
+  Future<void> markAlertsRead(AppUser user);
 
   /// Live offers from one shop, newest first.
   Future<List<Offer>> fetchShopOffers(String shopId);

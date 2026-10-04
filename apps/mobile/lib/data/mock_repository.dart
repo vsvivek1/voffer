@@ -1,14 +1,16 @@
 import 'dart:math';
 
+import '../models/alert.dart';
 import '../models/app_user.dart';
+import '../models/market.dart';
 import '../models/offer.dart';
 import '../models/order.dart';
 import '../models/shop.dart';
 import '../photos/photo_picker.dart';
 import 'voffer_repository.dart';
 
-/// In-memory backend seeded with demo firms, shops in Kochi and offers. Used when no
-/// Supabase project is configured, and in tests.
+/// In-memory backend seeded with demo firms, shops in Kochi and New York, and
+/// offers. Used when no Supabase project is configured, and in tests.
 class MockVofferRepository implements VofferRepository {
   MockVofferRepository({DateTime? now}) {
     _seed(now ?? DateTime.now());
@@ -19,6 +21,10 @@ class MockVofferRepository implements VofferRepository {
   final _shops = <String, Shop>{};
   final _offers = <Offer>[];
   final _orders = <Order>[];
+
+  /// (customer id, shop id) pairs.
+  final _follows = <(String, String)>{};
+  final _alerts = <String, List<Alert>>{};
   final _random = Random();
   AppUser? _current;
   int _nextId = 1;
@@ -46,6 +52,11 @@ class MockVofferRepository implements VofferRepository {
   void _seed(DateTime now) {
     final cafe = _addUser('cafe@demo.voffer', 'Bean There Cafe', UserRole.firm);
     final store = _addUser('store@demo.voffer', 'Urban Threads', UserRole.firm);
+    final bagels = _addUser(
+      'bagels@demo.voffer',
+      'Hudson Bagel Co.',
+      UserRole.firm,
+    );
     _addUser('customer@demo.voffer', 'Demo Customer', UserRole.customer);
     _shops[cafe.id] = Shop(
       id: cafe.id,
@@ -63,6 +74,15 @@ class MockVofferRepository implements VofferRepository {
       address: 'MG Road, Kochi',
       location: const GeoPoint(9.9700, 76.2850),
       hours: 'Mon–Sat, 10am–9pm',
+    );
+    _shops[bagels.id] = Shop(
+      id: bagels.id,
+      name: bagels.displayName,
+      category: 'Food & Drink',
+      address: 'Hudson St, New York',
+      location: const GeoPoint(40.7290, -74.0070),
+      hours: 'Daily, 6am–3pm',
+      country: Country.usa,
     );
 
     _offers.addAll([
@@ -107,6 +127,19 @@ class MockVofferRepository implements VofferRepository {
         category: 'Food & Drink',
         expiresAt: now.add(const Duration(days: 14)),
         createdAt: now.subtract(const Duration(days: 1)),
+      ),
+      Offer(
+        id: _id('offer'),
+        firmId: bagels.id,
+        firmName: bagels.displayName,
+        title: 'Bagel and coffee for \$5',
+        description: 'Any bagel with a schmear and a small drip coffee.',
+        price: 5,
+        originalPrice: 7.5,
+        currency: 'USD',
+        category: 'Food & Drink',
+        expiresAt: now.add(const Duration(days: 5)),
+        createdAt: now.subtract(const Duration(hours: 3)),
       ),
     ]);
   }
@@ -222,6 +255,7 @@ class MockVofferRepository implements VofferRepository {
       phone: _blankToNull(details.phone),
       hours: _blankToNull(details.hours),
       logoUrl: _blankToNull(details.logoUrl),
+      country: details.country,
     );
     _shops[firm.id] = shop;
     final updated = firm.copyWith(displayName: name);
@@ -229,7 +263,10 @@ class MockVofferRepository implements VofferRepository {
     if (_current?.id == firm.id) _current = updated;
     for (var i = 0; i < _offers.length; i++) {
       if (_offers[i].firmId == firm.id) {
-        _offers[i] = _offers[i].copyWith(firmName: name);
+        _offers[i] = _offers[i].copyWith(
+          firmName: name,
+          currency: details.country.currency,
+        );
       }
     }
     return shop;
@@ -250,6 +287,50 @@ class MockVofferRepository implements VofferRepository {
 
   static String? _blankToNull(String? v) =>
       (v == null || v.trim().isEmpty) ? null : v.trim();
+
+  @override
+  Future<bool> isFollowing(AppUser customer, String shopId) async =>
+      _follows.contains((customer.id, shopId));
+
+  @override
+  Future<void> setFollowing(
+    AppUser customer,
+    String shopId,
+    bool follow,
+  ) async {
+    if (customer.isFirm) {
+      throw RepositoryException('Only customers can follow shops.');
+    }
+    if (follow) {
+      _follows.add((customer.id, shopId));
+    } else {
+      _follows.remove((customer.id, shopId));
+    }
+  }
+
+  @override
+  Future<int> followerCount(String shopId) async =>
+      _follows.where((f) => f.$2 == shopId).length;
+
+  @override
+  Future<List<Alert>> fetchAlerts(AppUser user) async {
+    final now = DateTime.now();
+    return (_alerts[user.id] ?? const <Alert>[])
+        .where((a) => !a.at.isAfter(now))
+        .toList()
+      ..sort((a, b) => b.at.compareTo(a.at));
+  }
+
+  @override
+  Future<void> markAlertsRead(AppUser user) async {
+    final now = DateTime.now();
+    final alerts = _alerts[user.id] ?? <Alert>[];
+    for (var i = 0; i < alerts.length; i++) {
+      if (!alerts[i].at.isAfter(now)) {
+        alerts[i] = alerts[i].copyWith(isRead: true);
+      }
+    }
+  }
 
   @override
   Future<List<Offer>> fetchShopOffers(String shopId) async =>
@@ -281,8 +362,22 @@ class MockVofferRepository implements VofferRepository {
       startsAt: offer.startsAt,
       expiresAt: offer.expiresAt,
       createdAt: DateTime.now(),
+      currency: _shops[firm.id]!.country.currency,
     );
     _offers.add(created);
+    for (final (customerId, shopId) in _follows) {
+      if (shopId != firm.id) continue;
+      (_alerts[customerId] ??= []).add(
+        Alert(
+          id: _id('alert'),
+          shopId: firm.id,
+          offerId: created.id,
+          title: '${created.firmName} has a new offer',
+          body: created.title,
+          at: created.startsAt,
+        ),
+      );
+    }
     return created;
   }
 
@@ -320,6 +415,7 @@ class MockVofferRepository implements VofferRepository {
       unitPrice: current.price,
       status: OrderStatus.reserved,
       code: _code(current.firmId),
+      currency: current.currency,
       createdAt: DateTime.now(),
     );
     _orders.add(order);

@@ -23,6 +23,9 @@ class ShopProfileScreen extends StatefulWidget {
 
 class _ShopProfileScreenState extends State<ShopProfileScreen> {
   late Future<(Shop?, List<Offer>)> _future;
+  int? _followers;
+  bool _following = false;
+  bool _followBusy = false;
 
   @override
   void didChangeDependencies() {
@@ -31,12 +34,50 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
   }
 
   Future<(Shop?, List<Offer>)> _load() async {
-    final repo = AppScope.read(context).repository;
+    final app = AppScope.read(context);
+    final repo = app.repository;
+    final user = app.user;
     final results = await Future.wait([
       repo.fetchShop(widget.shopId),
       repo.fetchShopOffers(widget.shopId),
+      repo.followerCount(widget.shopId),
+      if (user != null && !user.isFirm) repo.isFollowing(user, widget.shopId),
     ]);
+    if (mounted) {
+      setState(() {
+        _followers = results[2] as int;
+        _following = results.length > 3 && results[3] as bool;
+      });
+    }
     return (results[0] as Shop?, results[1] as List<Offer>);
+  }
+
+  Future<void> _toggleFollow() async {
+    final app = AppScope.read(context);
+    final follow = !_following;
+    setState(() => _followBusy = true);
+    try {
+      await app.repository.setFollowing(app.user!, widget.shopId, follow);
+      if (!mounted) return;
+      setState(() {
+        _following = follow;
+        _followers = (_followers ?? 0) + (follow ? 1 : -1);
+      });
+      if (follow) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("You'll get an alert when they post an offer."),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _followBusy = false);
+    }
   }
 
   Future<void> _refresh() async {
@@ -74,6 +115,8 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
 
   Widget _buildBody(Shop shop, List<Offer> offers) {
     final theme = Theme.of(context);
+    final user = AppScope.read(context).user;
+    final followers = _followers;
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
@@ -92,7 +135,25 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                           ),
                         ),
                   title: Text(shop.name, style: theme.textTheme.titleLarge),
-                  subtitle: Text(shop.category),
+                  subtitle: Text(
+                    followers == null
+                        ? shop.category
+                        : '${shop.category} · $followers '
+                              '${followers == 1 ? 'follower' : 'followers'}',
+                  ),
+                  trailing: user == null || user.isFirm
+                      ? null
+                      : _following
+                      ? OutlinedButton.icon(
+                          onPressed: _followBusy ? null : _toggleFollow,
+                          icon: const Icon(Icons.check),
+                          label: const Text('Following'),
+                        )
+                      : FilledButton.icon(
+                          onPressed: _followBusy ? null : _toggleFollow,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Follow'),
+                        ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.place_outlined),

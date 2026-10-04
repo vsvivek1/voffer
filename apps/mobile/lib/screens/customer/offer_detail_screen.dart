@@ -126,13 +126,13 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                formatMoney(offer.price),
+                formatMoney(offer.price, offer.currency),
                 style: theme.textTheme.headlineMedium,
               ),
               if (offer.originalPrice != null) ...[
                 const SizedBox(width: 12),
                 Text(
-                  formatMoney(offer.originalPrice!),
+                  formatMoney(offer.originalPrice!, offer.currency),
                   style: theme.textTheme.titleMedium?.copyWith(
                     decoration: TextDecoration.lineThrough,
                     color: theme.colorScheme.outline,
@@ -176,7 +176,7 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
                   onPressed: offer.isBuyable && !_busy ? _buy : null,
                   child: Text(
                     offer.isBuyable
-                        ? 'Buy for ${formatMoney(offer.price * _quantity)}'
+                        ? 'Buy for ${formatMoney(offer.price * _quantity, offer.currency)}'
                         : 'Unavailable',
                   ),
                 ),

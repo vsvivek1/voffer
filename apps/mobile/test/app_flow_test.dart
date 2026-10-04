@@ -24,6 +24,16 @@ void main() {
     await tester.pumpAndSettle();
 
     await signIn(tester, 'customer@demo.voffer');
+    await tester.scrollUntilVisible(
+      find.text('40% off denim jackets'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(RefreshIndicator),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.text('40% off denim jackets'), findsOneWidget);
 
     await tester.ensureVisible(find.text('40% off denim jackets'));
