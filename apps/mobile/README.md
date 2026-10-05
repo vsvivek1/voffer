@@ -45,8 +45,18 @@ Kochi from the location chip if your device is elsewhere.
   trigger adds an alert for each follower, shown in the Alerts tab with an
   unread badge. A scheduled offer's alert appears when the offer starts.
 - Firms see their follower count on My offers.
-- Alerts are in-app only for now. Phone push notifications need a Firebase
-  project, which is the next step.
+- Android phones also get a push notification for each alert, through
+  Firebase project `voffer-185f0` (`lib/firebase_options.dart`). iOS push
+  needs the iOS app added to that Firebase project first.
+
+### Turning on push in Supabase
+
+1. In the Firebase console, Project settings > Service accounts > Generate new
+   private key.
+2. `supabase secrets set FIREBASE_SERVICE_ACCOUNT="$(cat key.json)"`, then
+   `supabase functions deploy push-alerts`.
+3. Store `project_url` and `service_role_key` in Vault and run
+   `supabase/push_cron.sql` once. It calls the function every minute.
 
 ## India and USA
 

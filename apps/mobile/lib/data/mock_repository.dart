@@ -332,6 +332,19 @@ class MockVofferRepository implements VofferRepository {
     }
   }
 
+  /// Push tokens by token, mapped to the user they deliver to.
+  final deviceTokens = <String, String>{};
+
+  @override
+  Future<void> saveDeviceToken(AppUser user, String token) async {
+    deviceTokens[token] = user.id;
+  }
+
+  @override
+  Future<void> deleteDeviceToken(String token) async {
+    deviceTokens.remove(token);
+  }
+
   @override
   Future<List<Offer>> fetchShopOffers(String shopId) async =>
       _offers.where((o) => o.firmId == shopId && o.isLive).toList()

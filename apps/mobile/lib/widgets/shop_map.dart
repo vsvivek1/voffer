@@ -9,7 +9,7 @@ LatLng _latLng(GeoPoint p) => LatLng(p.lat, p.lng);
 /// OpenStreetMap tiles. Their usage policy requires [_attribution] on top.
 Widget _tiles() => TileLayer(
   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  userAgentPackageName: 'com.voffer.voffer',
+  userAgentPackageName: 'com.calecutech.voffer',
 );
 
 const _attribution = SimpleAttributionWidget(

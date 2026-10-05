@@ -1,6 +1,6 @@
 # Releasing to Google Play
 
-Application ID: `com.voffer.voffer` (permanent once published).
+Application ID: `com.calecutech.voffer` (permanent once published).
 
 The **Mobile app** GitHub Actions workflow builds a release App Bundle on
 every PR and push to `main` and stores it as a run artifact. Run it manually
@@ -34,7 +34,7 @@ Variables (not secrets, the publishable key is public): `SUPABASE_URL` and
 
 ## 3. First release in the Play Console (manual, once)
 
-1. Create the app in the Play Console with package `com.voffer.voffer`.
+1. Create the app in the Play Console with package `com.calecutech.voffer`.
 2. Download the signed `app-release.aab` from a workflow run and upload it
    by hand to the **Internal testing** track. The Play API cannot create
    the first release, so this one is always manual.
