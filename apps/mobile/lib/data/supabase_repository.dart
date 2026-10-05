@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/alert.dart';
@@ -242,6 +243,18 @@ class SupabaseVofferRepository implements VofferRepository {
         .eq('user_id', user.id)
         .isFilter('read_at', null),
   );
+
+  @override
+  Future<void> saveDeviceToken(AppUser user, String token) => _guard(
+    () => _client.rpc(
+      'save_device_token',
+      params: {'p_token': token, 'p_platform': defaultTargetPlatform.name},
+    ),
+  );
+
+  @override
+  Future<void> deleteDeviceToken(String token) =>
+      _guard(() => _client.from('device_tokens').delete().eq('token', token));
 
   @override
   Future<List<Offer>> fetchShopOffers(String shopId) => _guard(() async {

@@ -67,6 +67,12 @@ abstract class VofferRepository {
 
   Future<void> markAlertsRead(AppUser user);
 
+  /// Registers this phone to get push notifications for [user]'s alerts.
+  Future<void> saveDeviceToken(AppUser user, String token);
+
+  /// Stops push notifications to the phone with [token].
+  Future<void> deleteDeviceToken(String token);
+
   /// Live offers from one shop, newest first.
   Future<List<Offer>> fetchShopOffers(String shopId);
 

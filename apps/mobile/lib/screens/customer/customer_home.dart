@@ -17,14 +17,17 @@ class _CustomerHomeState extends State<CustomerHome> {
   int _unread = 0;
   final _ordersKey = GlobalKey<MyOrdersScreenState>();
   final _alertsKey = GlobalKey<AlertsScreenState>();
-  bool _countedUnread = false;
+  int? _alertsChanged;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_countedUnread) {
-      _countedUnread = true;
+    // Count on first build and again whenever a push arrives.
+    final changed = AppScope.of(context).alertsChanged;
+    if (changed != _alertsChanged) {
+      _alertsChanged = changed;
       _countUnread();
+      if (_tab == 2) _alertsKey.currentState?.reload();
     }
   }
 
