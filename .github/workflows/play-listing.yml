@@ -1,0 +1,41 @@
+name: Play Store listing
+
+# Uploads the icon, feature graphic and phone screenshots in
+# apps/mobile/store/android to the Play Console listing.
+on:
+  push:
+    branches: [main]
+    paths: ["apps/mobile/store/**", ".github/workflows/play-listing.yml"]
+  workflow_dispatch:
+    inputs:
+      language:
+        description: "Listing language, e.g. en-US (leave empty for the listing's default)"
+        type: string
+        default: ""
+
+concurrency:
+  group: play-listing
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile/store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install google-api-python-client google-auth
+      - name: Upload listing graphics
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          LISTING_LANGUAGE: ${{ inputs.language }}
+        run: |
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::Add the PLAY_SERVICE_ACCOUNT_JSON secret first."
+            exit 1
+          fi
+          python upload_listing.py
