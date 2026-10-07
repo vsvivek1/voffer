@@ -5,6 +5,7 @@ import '../../format.dart';
 import '../../models/market.dart';
 import '../../models/offer.dart';
 import '../../models/shop.dart';
+import '../../widgets/account_menu.dart';
 import '../../widgets/offer_card.dart';
 import 'offer_detail_screen.dart';
 
@@ -93,17 +94,10 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final app = AppScope.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(_place == null ? 'Offers' : 'Nearby'),
-        actions: [
-          IconButton(
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout),
-            onPressed: app.signOut,
-          ),
-        ],
+        actions: [const AccountMenu()],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(112),
           child: Column(

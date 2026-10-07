@@ -5,6 +5,7 @@ import '../../format.dart';
 import '../../models/offer.dart';
 import '../../models/order.dart';
 import '../../models/shop.dart';
+import '../../widgets/account_menu.dart';
 import '../../widgets/offer_card.dart';
 import '../shop/shop_form_screen.dart';
 import 'create_offer_screen.dart';
@@ -126,7 +127,6 @@ class _FirmHomeState extends State<FirmHome> {
   }
 
   Widget _buildDashboard(Shop shop) {
-    final app = AppScope.read(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(shop.name),
@@ -141,11 +141,7 @@ class _FirmHomeState extends State<FirmHome> {
             icon: const Icon(Icons.storefront),
             onPressed: () => _editShop(shop),
           ),
-          IconButton(
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout),
-            onPressed: app.signOut,
-          ),
+          const AccountMenu(),
         ],
       ),
       body: RefreshIndicator(

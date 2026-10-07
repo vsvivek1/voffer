@@ -30,6 +30,12 @@ abstract class VofferRepository {
 
   Future<void> signOut();
 
+  /// Permanently deletes the signed-in user's account: their profile, shop,
+  /// offers, photos, follows, alerts and device tokens. Their orders stay
+  /// with the other party, without their name. The local session is not
+  /// cleared; call [signOut] afterwards.
+  Future<void> deleteAccount();
+
   /// Live offers from every firm, newest first.
   Future<List<Offer>> fetchFeed({String? category, String? query});
 

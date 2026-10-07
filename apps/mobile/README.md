@@ -58,6 +58,18 @@ Kochi from the location chip if your device is elsewhere.
 3. Store `project_url` and `service_role_key` in Vault and run
    `supabase/push_cron.sql` once. It calls the function every minute.
 
+## Deleting an account
+
+- Signed-in users open the account menu (top right of Offers, the shop
+  dashboard, or shop setup) and choose Delete account. After they confirm,
+  the app calls the `delete-account` Edge Function and returns to sign in.
+- The function deletes the user's photos from `voffer-images`, then the auth
+  user. That cascades to their profile, shop, offers, follows, alerts and
+  device tokens. Orders are kept for the other party: a deleted customer
+  shows as "Deleted user" to the shop, and a deleted shop's unredeemed
+  orders are cancelled in the customer's history.
+- Deploy with `supabase db push` and `supabase functions deploy delete-account`.
+
 ## India and USA
 
 - Each shop picks India or USA. Its offers and orders carry its currency

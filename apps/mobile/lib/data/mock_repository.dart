@@ -197,6 +197,48 @@ class MockVofferRepository implements VofferRepository {
   @override
   Future<void> signOut() async => _current = null;
 
+  /// Mirrors the server: the user's own data goes, and their orders stay
+  /// with the other party without them.
+  @override
+  Future<void> deleteAccount() async {
+    final user = _current;
+    if (user == null) throw RepositoryException('Sign in first.');
+    _users.remove(user.email);
+    _passwords.remove(user.email);
+    _shops.remove(user.id);
+    _offers.removeWhere((o) => o.firmId == user.id);
+    _follows.removeWhere((f) => f.$1 == user.id || f.$2 == user.id);
+    _alerts.remove(user.id);
+    for (final alerts in _alerts.values) {
+      alerts.removeWhere((a) => a.shopId == user.id);
+    }
+    deviceTokens.removeWhere((_, owner) => owner == user.id);
+    for (var i = 0; i < _orders.length; i++) {
+      final o = _orders[i];
+      final asCustomer = o.customerId == user.id;
+      final asFirm = o.firmId == user.id;
+      if (!asCustomer && !asFirm) continue;
+      _orders[i] = Order(
+        id: o.id,
+        offerId: asFirm ? '' : o.offerId,
+        offerTitle: o.offerTitle,
+        firmId: asFirm ? '' : o.firmId,
+        firmName: o.firmName,
+        customerId: asCustomer ? '' : o.customerId,
+        customerName: asCustomer ? 'Deleted user' : o.customerName,
+        quantity: o.quantity,
+        unitPrice: o.unitPrice,
+        status: asFirm && o.status == OrderStatus.reserved
+            ? OrderStatus.cancelled
+            : o.status,
+        code: o.code,
+        createdAt: o.createdAt,
+        redeemedAt: o.redeemedAt,
+        currency: o.currency,
+      );
+    }
+  }
+
   bool _matches(Offer o, String? category, String? query) {
     if (!o.isLive) return false;
     if (category != null && o.category != category) return false;
