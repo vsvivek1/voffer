@@ -5,6 +5,7 @@ import '../../format.dart';
 import '../../models/market.dart';
 import '../../models/offer.dart';
 import '../../models/shop.dart';
+import '../../widgets/account_menu.dart';
 import '../../widgets/photo_field.dart';
 import '../../widgets/shop_map.dart';
 
@@ -130,14 +131,7 @@ class _ShopFormScreenState extends State<ShopFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isNew ? 'Set up your shop' : 'Edit shop'),
-        actions: [
-          if (_isNew)
-            IconButton(
-              tooltip: 'Sign out',
-              icon: const Icon(Icons.logout),
-              onPressed: AppScope.read(context).signOut,
-            ),
-        ],
+        actions: [if (_isNew) const AccountMenu()],
       ),
       body: Form(
         key: _formKey,

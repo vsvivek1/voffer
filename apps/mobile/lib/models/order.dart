@@ -81,11 +81,12 @@ class Order {
 
   factory Order.fromMap(Map<String, dynamic> map) => Order(
     id: map['id'] as String,
-    offerId: map['offer_id'] as String,
+    // The ids are cleared when the offer, shop or customer is deleted.
+    offerId: (map['offer_id'] ?? '') as String,
     offerTitle: (map['offer_title'] ?? '') as String,
-    firmId: map['firm_id'] as String,
+    firmId: (map['firm_id'] ?? '') as String,
     firmName: (map['firm_name'] ?? '') as String,
-    customerId: map['customer_id'] as String,
+    customerId: (map['customer_id'] ?? '') as String,
     customerName: (map['customer_name'] ?? '') as String,
     quantity: map['quantity'] as int,
     unitPrice: (map['unit_price'] as num).toDouble(),

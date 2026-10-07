@@ -78,6 +78,20 @@ class AppState extends ChangeNotifier {
     setUser(null);
   }
 
+  /// Permanently deletes the signed-in account, then signs out. Throws a
+  /// [RepositoryException] and stays signed in if the deletion fails.
+  Future<void> deleteAccount() async {
+    await repository.deleteAccount();
+    // The server already removed this phone's push token with the account.
+    _pushToken = null;
+    try {
+      await repository.signOut();
+    } catch (e) {
+      debugPrint('Sign out after account deletion failed: $e');
+    }
+    setUser(null);
+  }
+
   Future<void> _registerPush() async {
     final token = await push.register();
     if (token != null) await _saveToken(token);

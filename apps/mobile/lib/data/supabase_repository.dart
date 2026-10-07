@@ -85,6 +85,22 @@ class SupabaseVofferRepository implements VofferRepository {
   Future<void> signOut() => _client.auth.signOut();
 
   @override
+  Future<void> deleteAccount() async {
+    try {
+      // Sends the user's access token; the function deletes that user.
+      await _client.functions.invoke('delete-account');
+    } on FunctionException catch (e) {
+      final details = e.details;
+      final message = details is Map && details['error'] is String
+          ? details['error'] as String
+          : 'Could not delete your account. Please try again.';
+      throw RepositoryException(message);
+    } on AuthException catch (e) {
+      throw RepositoryException(e.message);
+    }
+  }
+
+  @override
   Future<List<Offer>> fetchFeed({
     String? category,
     String? query,
